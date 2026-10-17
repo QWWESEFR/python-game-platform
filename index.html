@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python 小游戏发布平台</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-logo">PyPlay</span>
+    <span class="brand-name">Python 小游戏发布平台</span>
+    <button id="btnTools" type="button" class="btn btn-outline btn-tools">实用的工具</button>
+  </div>
+  <div class="topbar-search">
+    <input id="searchInput" type="text" placeholder="按游戏名称 / 作者搜索" autocomplete="off">
+  </div>
+  <div class="topbar-actions">
+    <button id="btnCreate" type="button" class="btn btn-primary">创作</button>
+    <button id="btnProfile" type="button" class="btn btn-outline">个人中心</button>
+  </div>
+</header>
+
+<main>
+  <div class="game-grid" id="gameGrid"></div>
+  <div class="empty-tip" id="emptyTip" hidden>暂无可见的游戏，点击右上角「创作」发布你的第一个 Python 小游戏吧。</div>
+</main>
+
+<!-- 编辑器弹窗（发布 / 修改共用） -->
+<div class="modal-overlay" id="editorModal" hidden>
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h3 id="editorTitle">发布新游戏</h3>
+      <button type="button" class="modal-close" data-close="editorModal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="editor-row">
+        <div class="editor-field">
+          <div class="editor-label">游戏名称</div>
+          <input id="gameTitleInput" class="editor-input" type="text" placeholder="请输入游戏名称" maxlength="40">
+        </div>
+        <div class="editor-field">
+          <div class="editor-label">可见范围</div>
+          <select id="gameVisibility" class="editor-select"></select>
+        </div>
+      </div>
+      <div class="editor-label">Python 代码（发布前将用 Pyodide 真实运行验证）</div>
+      <div class="code-toolbar">
+        <button id="btnUpload" type="button" class="btn btn-plain btn-small">上传 .py 文件</button>
+        <input id="fileUpload" type="file" accept=".py,.txt,text/x-python" hidden>
+        <span class="editor-label">或直接粘贴代码到下方</span>
+      </div>
+      <textarea id="codeInput" spellcheck="false" placeholder="# 在这里粘贴或输入 Python 代码&#10;print('Hello, PyGame Platform!')"></textarea>
+      <div id="editorStatus" class="status-box" hidden></div>
+    </div>
+    <div class="modal-foot">
+      <button id="btnVerifyPublish" type="button" class="btn btn-primary">验证并发布</button>
+      <button id="btnSaveEdit" type="button" class="btn btn-success" hidden>保存修改</button>
+      <button type="button" class="btn btn-plain" data-close="editorModal">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 个人中心弹窗 -->
+<div class="modal-overlay" id="profileModal" hidden>
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h3>个人中心</h3>
+      <button type="button" class="modal-close" data-close="profileModal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="name-section">
+        <input id="myNameInput" type="text" placeholder="请输入你的名字（未取名不能创作和发布）" maxlength="20">
+        <button id="btnSaveName" type="button" class="btn btn-primary">保存名字</button>
+      </div>
+      <div id="nameTip" class="status-box" hidden></div>
+      <div class="tabs">
+        <button type="button" class="tab active" data-tab="published">已发布</button>
+        <button type="button" class="tab" data-tab="friends">我的好友</button>
+      </div>
+      <div id="tabPublished" class="pub-list"></div>
+      <div id="tabFriends" hidden>
+        <div class="friend-add">
+          <input id="friendNameInput" type="text" placeholder="输入朋友的名字" maxlength="20">
+          <button id="btnAddFriend" type="button" class="btn btn-primary">添加朋友</button>
+        </div>
+        <div class="friend-block">
+          <div class="friend-subtitle">待确认的朋友（点击选择后再点「确定」建立好友关系）</div>
+          <div id="pendingFriends" class="friend-list"></div>
+          <button id="btnConfirmFriend" type="button" class="btn btn-success" style="margin-top:8px;">确定</button>
+        </div>
+        <div class="friend-block">
+          <div class="friend-subtitle">我的好友</div>
+          <div id="friendList" class="friend-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 实用的工具 · 官方下载专区弹窗 -->
+<div class="modal-overlay" id="toolsModal" hidden>
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h3>实用的工具 · 官方下载专区</h3>
+      <button type="button" class="modal-close" data-close="toolsModal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="tools-note">以下工具由官方发布，仅支持 Windows 电脑版。点击「下载安装包」获取安装程序，按安装说明完成安装。</div>
+      <div id="toolsGrid" class="tools-grid"></div>
+      <div id="toolsEmpty" class="empty-tip" hidden>暂无官方工具，敬请期待。</div>
+    </div>
+  </div>
+</div>
+
+<!-- 游玩弹窗 -->
+<div class="modal-overlay" id="playModal" hidden>
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <h3 id="playTitle">游玩</h3>
+      <span class="play-count">在线 <span id="playCount">0</span> 人</span>
+      <button type="button" class="modal-close" data-close="playModal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="sandbox-container"><pre id="sandboxOutput" class="sandbox-output"></pre></div>
+    </div>
+    <div class="modal-foot">
+      <button id="btnStopPlay" type="button" class="btn btn-danger">退出游戏</button>
+    </div>
+  </div>
+</div>
+
+<!-- 通用确认弹窗 -->
+<div class="modal-overlay" id="confirmModal" hidden>
+  <div class="modal modal-sm">
+    <div class="modal-head"><h3 id="confirmTitle">请确认</h3></div>
+    <div class="modal-body"><p id="confirmText"></p></div>
+    <div class="modal-foot">
+      <button id="confirmOk" type="button" class="btn btn-danger">确定</button>
+      <button id="confirmCancel" type="button" class="btn btn-plain">取消</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="js/storage.js"></script>
+<script src="js/pyodide.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
